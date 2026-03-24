@@ -1,0 +1,27 @@
+<h1 class="text-center my-4">All Blogs</h1>
+
+<div class="row">
+  <% if (blogs && blogs.length > 0) { %>
+    <% blogs.forEach(blog => { %>
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          <img src="<%= blog.img %>" class="card-img-top" alt="<%= blog.title %>" style="height: 200px; object-fit: contain; padding: 1rem;">
+          <div class="card-body">
+            <h5 class="card-title"><%= blog.title %></h5>
+            <p class="card-text"><%= blog.description %></p>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+  <% } else { %>
+    <div class="col-12">
+      <div class="alert alert-info text-center">
+        No blogs found. <a href="/createblog" class="alert-link">Create your first blog!</a>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<div class="text-center mt-4">
+  <a href="/createblog" class="btn btn-primary">Add New Blog</a>
+</div>

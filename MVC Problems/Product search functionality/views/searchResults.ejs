@@ -1,0 +1,38 @@
+<!-- Write your code here to render the search data -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - ikart</title>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Search Results for "<%= searchTerm %>"</h2>
+        
+        <% if (products.length > 0) { %>
+            <p>Found <%= products.length %> product(s)</p>
+            <div class="row">
+                <% products.forEach((product)=> { %>
+                    <div class="col-md-4 mb-4">
+                        <div class="card" style="width: 18rem">
+                            <img src="<%= product.image %>" class="card-img-top" alt="<%= product.name %>" style="height: 200px; object-fit: contain;" />
+                            <div class="card-body">
+                                <p class="card-text"><%= product.name %></p>
+                            </div>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } else { %>
+            <div class="alert alert-info">
+                No products found matching "<%= searchTerm %>"
+            </div>
+        <% } %>
+        
+        <div class="mt-3">
+            <a href="/" class="btn btn-primary">Back to Home</a>
+        </div>
+    </div>
+</body>
+</html>
