@@ -1,0 +1,135 @@
+<!-- no need to change the prewritten code.
+complete the script tag code. -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Task Management App</title>
+  </head>
+
+  <body>
+    <div id="task-form">
+      <!-- Create a form to add new tasks -->
+      <form id="create-task-form">
+        <input
+          type="text"
+          id="task-text"
+          placeholder="Enter a new task"
+          required
+        />
+        <button id="create-task" type="submit">Add Task</button>
+      </form>
+    </div>
+
+    <div id="task-list">
+      <!-- Tasks will be displayed here -->
+    </div>
+
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io.connect("http://localhost:3000");
+
+      // -------------------write your code here.--------------------
+
+      // Get DOM elements
+      const taskForm = document.getElementById("create-task-form");
+      const taskInput = document.getElementById("task-text");
+      const taskList = document.getElementById("task-list");
+
+      // Function to render a single task
+      function renderTask(task) {
+        const taskElement = document.createElement("div");
+        taskElement.className = "task-item";
+        taskElement.id = `task-${task._id}`;
+        taskElement.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        margin: 10px 0;
+        background-color: #f5f5f5;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    `;
+
+        const taskText = document.createElement("span");
+        taskText.textContent = task.text;
+        taskText.style.cssText = `
+        flex-grow: 1;
+        font-size: 16px;
+    `;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "Delete";
+        deleteButton.style.cssText = `
+        padding: 5px 10px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    `;
+        deleteButton.onclick = () => {
+          socket.emit("deleteTask", task._id);
+        };
+
+        const createdAt = document.createElement("small");
+        createdAt.textContent = new Date(task.createdAt).toLocaleString();
+        createdAt.style.cssText = `
+        font-size: 12px;
+        color: #666;
+        margin-right: 10px;
+    `;
+
+        taskElement.appendChild(taskText);
+        taskElement.appendChild(createdAt);
+        taskElement.appendChild(deleteButton);
+
+        return taskElement;
+      }
+
+      // Function to add task to the DOM
+      function addTaskToDOM(task) {
+        const taskElement = renderTask(task);
+        taskList.appendChild(taskElement);
+      }
+
+      // Function to remove task from DOM
+      function removeTaskFromDOM(taskId) {
+        const taskElement = document.getElementById(`task-${taskId}`);
+        if (taskElement) {
+          taskElement.remove();
+        }
+      }
+
+      // Handle form submission for adding tasks
+      taskForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const taskText = taskInput.value.trim();
+
+        if (taskText) {
+          socket.emit("addTask", taskText);
+          taskInput.value = ""; // Clear the input field
+        }
+      });
+
+      // Listen for initial tasks when connecting
+      socket.on("initialTasks", (tasks) => {
+        taskList.innerHTML = ""; // Clear existing tasks
+        tasks.forEach((task) => {
+          addTaskToDOM(task);
+        });
+      });
+
+      // Listen for new tasks from other users
+      socket.on("addTask", (task) => {
+        addTaskToDOM(task);
+      });
+
+      // Listen for task deletions from other users
+      socket.on("deleteTask", (taskId) => {
+        removeTaskFromDOM(taskId);
+      }); // -------------------write your code here.--------------------
+    </script>
+  </body>
+</html>

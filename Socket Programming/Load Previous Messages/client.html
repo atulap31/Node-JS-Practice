@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat-Room App</title>
+    <style>
+        #chat-container {
+            display: none;
+        }
+        #message-display {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .message strong {
+            color: #0066cc;
+        }
+        .time-range-select {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-container">
+        <form id="login-form">
+            <input type="text" id="username-input" placeholder="Enter your username" required>
+            <input type="text" id="room-input" placeholder="Enter room ID" required>
+            <select id="time-range-select">
+                <option value="1">Last 1 hour</option>
+                <option value="6">Last 6 hours</option>
+                <option value="24" selected>Last 24 hours</option>
+                <option value="168">Last week (7 days)</option>
+                <option value="720">Last 30 days</option>
+                <option value="all">All messages</option>
+            </select>
+            <button id='start-chatting' type="submit">Start Chatting</button>
+        </form>
+    </div>
+
+    <div id="chat-container">
+        <div id="message-display"></div>
+        <form id="message-form">
+            <input type="text" id="message-input" placeholder="Type your message" required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io.connect('http://localhost:3000');
+
+        const loginContainer = document.getElementById('login-container');
+        const chatContainer = document.getElementById('chat-container');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const messageDisplay = document.getElementById('message-display');
+        const timeRangeSelect = document.getElementById('time-range-select');
+
+        let username = '';
+        let room = '';
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            username = document.getElementById('username-input').value;
+            room = document.getElementById('room-input').value;
+            const timeRange = timeRangeSelect.value;
+
+            loginContainer.style.display = 'none';
+            chatContainer.style.display = 'block';
+            
+            // Clear previous messages
+            messageDisplay.innerHTML = '';
+            
+            // Join the room with time range
+            socket.emit('join', { username, room, timeRange });
+        });
+
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = messageInput.value;
+            socket.emit('sendMessage', { username, message, room });
+            messageInput.value = '';
+        });
+
+        socket.on('message', (message) => {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleString() : '';
+            messageElement.innerHTML = `<strong>${message.username}:</strong> ${message.text} <small style="color: #999;">${timestamp}</small>`;
+            messageDisplay.appendChild(messageElement);
+            messageDisplay.scrollTop = messageDisplay.scrollHeight;
+        });
+        
+        // Listen for previous messages from the server
+        socket.on('previousMessages', (previousMessages) => {
+            // Display the previous messages in chronological order
+            if (previousMessages && previousMessages.length > 0) {
+                previousMessages.forEach(msg => {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message';
+                    const timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : '';
+                    messageElement.innerHTML = `<strong>${msg.username}:</strong> ${msg.text} <small style="color: #999;">${timestamp}</small>`;
+                    messageDisplay.appendChild(messageElement);
+                });
+                messageDisplay.scrollTop = messageDisplay.scrollHeight;
+            } else {
+                const noMessagesElement = document.createElement('div');
+                noMessagesElement.className = 'message';
+                noMessagesElement.innerHTML = '<em>No messages in this time range</em>';
+                messageDisplay.appendChild(noMessagesElement);
+            }
+        });
+        
+        socket.on('welcome', (message) => {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            messageElement.innerHTML = `<em>${message.text}</em>`;
+            messageDisplay.appendChild(messageElement);
+        });
+    </script>
+</body>
+
+</html>

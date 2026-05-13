@@ -1,0 +1,135 @@
+<!-- No need to change the pre-written code.
+Implement the features inside the script tag -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat-Room App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="login-container">
+        <!-- form to enter username and room ID -->
+        <form id="login-form">
+            <input type="text" id="username-input" placeholder="Enter your username" required>
+            <input type="text" id="room-input" placeholder="Enter room ID" required>
+            <button id='start-chatting' type="submit">Start Chatting</button>
+        </form>
+    </div>
+
+    <div id="chat-container">
+        <!-- message display area -->
+        <div id="message-display">
+            <!-- Messages will be appended here -->
+        </div>
+
+        <!-- form to send messages -->
+        <form id="message-form">
+            <input type="text" id="message-input" placeholder="Type your message" required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io.connect('http://localhost:3000');
+
+        // ----------------- Write your code here ---------------
+        
+        // Get DOM elements
+        const loginContainer = document.getElementById('login-container');
+        const chatContainer = document.getElementById('chat-container');
+        const loginForm = document.getElementById('login-form');
+        const messageForm = document.getElementById('message-form');
+        const messageDisplay = document.getElementById('message-display');
+        const usernameInput = document.getElementById('username-input');
+        const roomInput = document.getElementById('room-input');
+        const messageInput = document.getElementById('message-input');
+        
+        // Initially hide chat container
+        chatContainer.style.display = 'none';
+        
+        let currentUsername = '';
+        let currentRoom = '';
+        
+        // Handle login form submission
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            currentUsername = usernameInput.value.trim();
+            currentRoom = roomInput.value.trim();
+            
+            if (currentUsername && currentRoom) {
+                // Emit join event to server
+                socket.emit('join', { username: currentUsername, room: currentRoom });
+                
+                // Show chat container and hide login container
+                loginContainer.style.display = 'none';
+                chatContainer.style.display = 'flex';
+                
+                // Clear message input
+                messageInput.value = '';
+            }
+        });
+        
+        // Handle message form submission
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const message = messageInput.value.trim();
+            
+            if (message && currentRoom) {
+                // Emit sendMessage event to server
+                socket.emit('sendMessage', {
+                    username: currentUsername,
+                    room: currentRoom,
+                    message: message
+                });
+                
+                // Clear input field
+                messageInput.value = '';
+            }
+        });
+        
+        // Listen for welcome message when user joins
+        socket.on('welcome', (data) => {
+            displayMessage(data.message, 'welcome');
+        });
+        
+        // Listen for user joined notifications
+        socket.on('userJoined', (data) => {
+            displayMessage(data.message, 'notification');
+        });
+        
+        // Listen for incoming messages
+        socket.on('message', (data) => {
+            displayMessage(`${data.username}: ${data.message}`, 'message');
+        });
+        
+        // Function to display messages in the chat area
+        function displayMessage(content, type) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            
+            if (type === 'welcome') {
+                messageElement.classList.add('welcome-message');
+            } else if (type === 'notification') {
+                messageElement.classList.add('notification-message');
+            } else {
+                messageElement.classList.add('chat-message');
+            }
+            
+            messageElement.textContent = content;
+            messageDisplay.appendChild(messageElement);
+            
+            // Auto-scroll to bottom
+            messageDisplay.scrollTop = messageDisplay.scrollHeight;
+        }
+        
+    </script>
+
+</body>
+
+</html>
